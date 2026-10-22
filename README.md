@@ -38,7 +38,7 @@ The pipeline is organised sequentially from raw dynamical modelling to network s
 
 1. **Simulate Dynamics (`ModelSimulation.R`)**: Runs the equations governing plant and pollinator abundances alongside behavioural and evolutionary over time.
 2. **Network Generation & Metric Extraction (`NetworksAndMetricsGeneration.R`)**: Converts equilibrium into bipartite network matrices and computes structural metrics.
-3. **Postmodel Analysis (`PostModelAnalysis.R`)**: Imports computed metrics (or loads `sim_networks.rds`) to produce summary tables and publication-ready plots.
+3. **Postmodel Analysis (`PostModelAnalysis.R`)**: Perform statistical analyses on simulated networks and produce plots.
 
 
 ---
