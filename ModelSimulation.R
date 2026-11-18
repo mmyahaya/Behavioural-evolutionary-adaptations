@@ -31,10 +31,10 @@ lotka<-function(t,y,parameters){
     disMatA=t(outer(yA,yA,"-"))
     # cross guild dissimilarity matrix
     disMat=outer(xP,yA,"-")
-    # competition kernel
 
-    cP=1*exp(-(disMatP^2)/(2*(sd_cP)^2))
-    cA=1*exp(-(disMatA^2)/(2*(sd_cA)^2))
+    # competition kernel
+    cP=exp(-(disMatP^2)/(2*(sd_cP)^2))
+    cA=exp(-(disMatA^2)/(2*(sd_cA)^2))
 
 
     # benefit function
@@ -42,20 +42,21 @@ lotka<-function(t,y,parameters){
     sigma_A=c*exp(-(disMat^2)/(2*(sd_m)^2))
 
     # Population dynamics/ Ecological process (Lotka-Volterra)
-    dXP<-(rP-(rP*(cP%*%XP))/KP+(((sigma_P*bet)%*%XA)*(alpha))/(w+((sigma_A*bet)%*%XA)))
-    dXA<-(rA-(rA*(cA%*%XA))/KA+(t(sigma_A*bet)%*%((alpha*XP)/(w+((sigma_A*bet)%*%XA)))))
+    dXP<-(rP-(rP*(cP%*%XP))/KP+(((sigma_P*bet)%*%XA)*(a))/(w+((sigma_A*bet)%*%XA)))
+    dXA<-(rA-(rA*(cA%*%XA))/KA+(t(sigma_A*bet)%*%((a*XP)/(w+((sigma_A*bet)%*%XA)))))
     dX<-(Xx[1:(M+N)]*rbind(dXP,dXA))
     # Adaptive foraging (replicator equation)
-    dbet<-((bet%*%diag(G,ncol = N))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
-                                          colSums((bet*sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
+    dbet<-((bet%*%diag(G,ncol = N))*sweep((sigma_A*c(a)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
+                                          colSums((bet*sigma_A*c(a)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
 
 
     #  Selection gradient of plant trait
-    gx=c(rP*XP/KP)*rowSums(cP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+(((c(alpha)*bet^2*disMat*sigma_P*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))%*%XA^2)-(((c(alpha)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))%*%XA^2)
+    #gx=c(rP*XP/KP)*rowSums(cP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+(((c(a)*bet^2*disMat*sigma_P*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))%*%XA^2)-(((c(a)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))%*%XA^2)
 
+    gx=c(rP/KP)*rowSums(cP*XP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+colSums((-c(w*a*XA)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))
 
     # Selection gradient of animal trait
-    gy=colSums((cA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA*XA/KA)),ncol = N))+colSums((c(XP*alpha)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
+    gy=colSums((cA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA*XA/KA)),ncol = N))+colSums((c(XP*a)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
 
     # canonical equation of adaptive dynamics (trait dynamics)
     dxP=m*XP*gx
@@ -159,7 +160,7 @@ set.seed(12)
   rA=matrix(runif(N,0.1,0.2), nr=N)
 
   # floral resource production rate
-  alpha=10*matrix(runif(M,1,1.2), nr=M)
+  a=matrix(runif(M,10,12), nr=M)
 
   # floral resource decay rate
   w=1*matrix(runif(M,1,1.2), nr=M)
@@ -185,26 +186,26 @@ set.seed(12)
 #### No adaptation ECOLOGICAL (BASELINE) ####
 # Simulation of the model equation
 {times=seq(0,300,1)
-  parameters=list(alpha=alpha,w=w, G=G*0,c=c, m = 0)
+  parameters=list(a=a,w=w, G=G*0,c=c, m = 0)
   solution1<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 solu1<-solution_fun(solution1)
 
 #### EVOLUTIONARY ####
 {times=seq(0,300,1)
-parameters=list(alpha=alpha,w=w, G=G*0,c=c, m = m)
+parameters=list(a=a,w=w, G=G*0,c=c, m = m)
 solution2<-ode(y=yini, times=times, func=lotka, parms=parameters)
 }
 solu2<-solution_fun(solution2)
 
 #### BEHAVIOURAL ####
 {times=seq(0,300,1)
-parameters=list(alpha=alpha,w=w, G=G,c=c, m = 0)
+parameters=list(a=a,w=w, G=G,c=c, m = 0)
 solution3<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 solu3<-solution_fun(solution3)
 
 #### EVOLUTIONARY AND BEHAVIOURAL ####
 {times=seq(0,300,1)
-  parameters=list(alpha=alpha,w=w, G=G,c=c, m = m)
+  parameters=list(a=a,w=w, G=G,c=c, m = m)
   solution4<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 solu4<-solution_fun(solution4)
 
