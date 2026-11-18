@@ -51,12 +51,10 @@ lotka<-function(t,y,parameters){
 
 
     #  Selection gradient of plant trait
-    #gx=c(rP*XP/KP)*rowSums(cP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+(((c(a)*bet^2*disMat*sigma_P*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))%*%XA^2)-(((c(a)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))%*%XA^2)
-
     gx=c(rP/KP)*rowSums(cP*XP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+colSums((-c(w*a*XA)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))
 
     # Selection gradient of animal trait
-    gy=colSums((cA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA*XA/KA)),ncol = N))+colSums((c(XP*a)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
+    gy=colSums((cA*XA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA/KA)),ncol = N))+colSums((c(XP*a)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
 
     # canonical equation of adaptive dynamics (trait dynamics)
     dxP=m*XP*gx
@@ -163,7 +161,7 @@ set.seed(12)
   a=matrix(runif(M,10,12), nr=M)
 
   # floral resource decay rate
-  w=1*matrix(runif(M,1,1.2), nr=M)
+  w=matrix(runif(M,1,1.2), nr=M)
 
   # Benefit scaling parameter
   c=1
@@ -215,7 +213,7 @@ titles <- c("Baseline", "Evo", "Beh", "Evo-Beh")
 
 layout(
   matrix(1:24, nrow = 6, byrow = TRUE),
-  heights = c(1.3, 1, 1, 1, 1, 1)
+  heights = c(1.3, 1, 1, 1, 1, 1.25)
 )
 
 par(
