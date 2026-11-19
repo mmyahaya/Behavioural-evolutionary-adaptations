@@ -43,22 +43,22 @@ lotka<-function(t,y,parameters){
     sigma_P=c*exp(-(disMat^2)/(2*(sd_m)^2))
     sigma_A=c*exp(-(disMat^2)/(2*(sd_m)^2))
 
-    dXP<-(rP-(rP*(cP%*%XP))/KP+(((sigma_P*bet)%*%XA)*(alpha))/(w+((sigma_A*bet)%*%XA)))
+    dXP<-(rP-(rP*(cP%*%XP))/KP+(((sigma_P*bet)%*%XA)*(a))/(w+((sigma_A*bet)%*%XA)))
 
-    dXA<-(rA-(rA*(cA%*%XA))/KA+(t(sigma_A*bet)%*%((alpha*XP)/(w+((sigma_A*bet)%*%XA)))))
+    dXA<-(rA-(rA*(cA%*%XA))/KA+(t(sigma_A*bet)%*%((a*XP)/(w+((sigma_A*bet)%*%XA)))))
 
     dX<-(Xx[1:(M+N)]*rbind(dXP,dXA))
 
-    dbet<-((bet%*%diag(G,ncol = N))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
-                                          colSums((bet*sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
+    dbet<-((bet%*%diag(G,ncol = N))*sweep((sigma_A*c(a)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
+                                          colSums((bet*sigma_A*c(a)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
 
 
     #  Selection gradient of plant competitive trait
-    gx=c(rP*XP/KP)*rowSums(cP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+(((c(alpha)*bet^2*disMat*sigma_P*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))%*%XA^2)-(((c(alpha)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))%*%XA^2)
+    gx=c(rP/KP)*rowSums(cP*XP*(-(xP-xm)/sd_kP^2+disMatP/sd_cP^2))+colSums((-c(w*a*XA)*bet*disMat*sigma_P)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)^2))
 
 
     # Selection gradient of animal competitive trait
-    gy=colSums((cA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA*XA/KA)),ncol = N))+colSums((c(XP*alpha)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
+    gy=colSums((cA*XA*(matrix((-(yA-ym)/sd_kA^2),N,N,byrow = TRUE)+disMatA/sd_cA^2))%*%diag(c((rA/KA)),ncol = N))+colSums((c(XP*a)*bet*disMat*sigma_A)/c(sd_m^2*(((bet*sigma_A)%*%XA)+w)))
 
     # canonical equation of adaptive dynamics (trait dynamics)
     dxP=m*XP*gx
@@ -114,7 +114,7 @@ compute_resilience <- function(y_final, parameters){
 }
 
 run_scenario <- function(M, N, lotka, X0, bet0, xP0, yA0,
-                         rP, rA, alpha, w, c,
+                         rP, rA, a, w, c,
                          kP, kA, xm, ym,
                          sd_m, sd_kP, sd_kA, sd_cP, sd_cA,
                          G, m, suffix = "", timeout = 30) {
@@ -122,7 +122,7 @@ run_scenario <- function(M, N, lotka, X0, bet0, xP0, yA0,
   yini <- c(c(X0), c(bet0), xP0, yA0)
   times <- seq(0, 300, 0.1)
   parameters <- list(
-    rP = rP, rA = rA, alpha = alpha, w = w, G = G, c = c, kP = kP, kA = kA,
+    rP = rP, rA = rA, a = a, w = w, G = G, c = c, kP = kP, kA = kA,
     xm = xm, ym = ym, sd_m = sd_m, sd_kP = sd_kP, sd_kA = sd_kA,
     sd_cP = sd_cP, sd_cA = sd_cA, m = m
   )
@@ -171,14 +171,10 @@ run_scenario <- function(M, N, lotka, X0, bet0, xP0, yA0,
   ForEffMatA<-as.matrix(solution[,(M+N+2):(M*N+M+N+1)])
   net<-matrix(tail(ForEffMatA,1),M,N)*(tail(X,1)[1:M]%*%t(tail(X,1)[(M+1):(M+N)]))
   net[net < 1e-4] <- 0
-  if(suffix==""){
-    struct <- bipartite::networklevel(net, index = c("modularity","weighted nestedness","weighted connectance", "Shannon diversity"))
-    names(struct) <- paste0(names(struct), suffix)
 
-  }else{
-    struct <- bipartite::networklevel(net, index = c("modularity","weighted nestedness","weighted connectance", "Shannon diversity"))
-    names(struct) <- paste0(names(struct), suffix)
-  }
+  struct <- bipartite::networklevel(net, index = c("modularity","weighted nestedness","weighted connectance", "Shannon diversity"))
+  names(struct) <- paste0(names(struct), suffix)
+
 
 
   # Final plant competition coefficient
@@ -286,10 +282,10 @@ model<-function(M,N){
       rA=matrix(runif(N,0.1,0.2), nr=N)
 
       # floral resource production rate
-      alpha=10*matrix(runif(M,1,1.2), nr=M)
+      a=matrix(runif(M,10,12), nr=M)
 
       # floral resource decay rate
-      w=1*matrix(runif(M,1,1.2), nr=M)
+      w=matrix(runif(M,1,1.2), nr=M)
 
       # Benefit scaling parameter
 
@@ -310,28 +306,28 @@ model<-function(M,N){
       # Simulation of the model equation
       # Evo-Beh
       value1 <- run_scenario(M, N, lotka, X0, bet0, xP0, yA0,
-                             rP, rA, alpha, w, c,
+                             rP, rA, a, w, c,
                              kP, kA, xm, ym,
                              sd_m, sd_kP, sd_kA, sd_cP, sd_cA,
                              G = G,  m = m, suffix = "")
 
       # Evo
       value2 <- run_scenario(M, N, lotka, X0, bet0, xP0, yA0,
-                             rP, rA, alpha, w, c,
+                             rP, rA, a, w, c,
                              kP, kA, xm, ym,
                              sd_m, sd_kP, sd_kA, sd_cP, sd_cA,
                              G = G * 0, m = m, suffix = "1")
 
       # Beh
       value3 <- run_scenario(M, N, lotka, X0, bet0, xP0, yA0,
-                             rP, rA, alpha, w, c,
+                             rP, rA, a, w, c,
                              kP, kA, xm, ym,
                              sd_m, sd_kP, sd_kA, sd_cP, sd_cA,
                              G = G,  m = 0, suffix = "2")
 
       # Baseline
       value4 <- run_scenario(M, N, lotka, X0, bet0, xP0, yA0,
-                             rP, rA, alpha, w, c,
+                             rP, rA, a, w, c,
                              kP, kA, xm, ym,
                              sd_m, sd_kP, sd_kA, sd_cP, sd_cA,
                              G = G * 0, m = 0, suffix = "3")
@@ -369,7 +365,7 @@ model<-function(M,N){
 
 
       # Combine all
-      k <- c(km = km, kk = kk, kc = kc, P = M, A= N, alpha = mean(alpha),
+      k <- c(km = km, kk = kk, kc = kc, P = M, A= N, a = mean(a),
              mean_x0=mean(xP0), mean_y0=mean(yA0),
              sd_x0 = sd(xP0), sd_y0 = sd(yA0), mean_cP0 = mean_cP0,
              mean_cA0 = mean_cA0, mean_sigma0 = mean_sigma0,
